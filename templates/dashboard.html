@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Attendance Dashboard</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <h1>📋 Attendance Dashboard</h1>
+
+    <h2>Today's Attendance</h2>
+    <table>
+        <tr>
+            <th>Name</th>
+            <th>Date</th>
+            <th>Time</th>
+        </tr>
+        {% for r in today_records %}
+        <tr>
+            <td>{{ r[0] }}</td>
+            <td>{{ r[1] }}</td>
+            <td>{{ r[2] }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <h2>All Records</h2>
+    <table>
+        <tr>
+            <th>Name</th>
+            <th>Date</th>
+            <th>Time</th>
+        </tr>
+        {% for r in all_records %}
+        <tr>
+            <td>{{ r[0] }}</td>
+            <td>{{ r[1] }}</td>
+            <td>{{ r[2] }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <br>
+    <a href="/download">⬇️ Download CSV</a>
+
+    <p style="margin-top:20px;">
+        <button onclick="location.reload()">🔄 Refresh</button>
+    </p>
+</body>
+</html>

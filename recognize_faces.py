@@ -1,10 +1,11 @@
 import cv2
 import pickle
+import numpy as np
+from datetime import datetime
 from attendance import mark_attendance
 
-face_cascade = cv2.CascadeClassifier(
-    cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
-)
+IMG_SIZE = (200, 200)
+CONFIDENCE_THRESHOLD = 70  # هرچه کمتر = سختگیرانه‌تر
 
 model = cv2.face.LBPHFaceRecognizer_create()
 model.read("face_model.yml")
@@ -13,6 +14,10 @@ with open("label_map.pkl", "rb") as f:
     label_map = pickle.load(f)
 
 cap = cv2.VideoCapture(0)
+
+face_cascade = cv2.CascadeClassifier(
+    cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
+)
 
 while True:
     ret, frame = cap.read()
@@ -24,22 +29,27 @@ while True:
 
     for (x, y, w, h) in faces:
         face_img = gray[y:y+h, x:x+w]
-        label, confidence = model.predict(face_img)
+        face_img = cv2.resize(face_img, IMG_SIZE)
 
-        name = "Unknown"
-        if confidence < 80:
-            name = label_map[label]
+        label_id, confidence = model.predict(face_img)
 
-        if name != "Unknown":
+        if confidence < CONFIDENCE_THRESHOLD:
+            name = label_map[label_id]
+            status = "Marked"
             mark_attendance(name)
+            color = (0, 255, 0)
+        else:
+            name = "Unknown"
+            status = "Unregistered"
+            color = (0, 0, 255)
 
+        cv2.rectangle(frame, (x, y), (x+w, y+h), color, 2)
+        cv2.putText(frame, f"{name} ({status})", (x, y-10),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2)
 
-        cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
-        cv2.putText(frame, f"{name}", (x, y-10),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
+    cv2.imshow("Attendance System", frame)
 
-    cv2.imshow("Face Recognition", frame)
-    if cv2.waitKey(1) & 0xFF == ord("q"):
+    if cv2.waitKey(1) & 0xFF == 27:
         break
 
 cap.release()
