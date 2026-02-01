@@ -1,13 +1,10 @@
 import cv2
 import os
 
-# Get person name
-person_names = input("Enter the person name: ").strip().lower()
+person_name = input("Enter person name: ").strip().lower()
 
-# Store path
-base_dir = 'known_faces'
-person_dir = os.path.join(base_dir, person_names)
-
+base_dir = "known_faces"
+person_dir = os.path.join(base_dir, person_name)
 os.makedirs(person_dir, exist_ok=True)
 
 face_cascade = cv2.CascadeClassifier(
@@ -26,10 +23,8 @@ while True:
     if not ret:
         break
 
-    rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-    faces = face_cascade.detectMultiScale(
-        rgb, scaleFactor=1.3, minNeighbors=5
-    )
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    faces = face_cascade.detectMultiScale(gray, 1.3, 5)
 
     for (x, y, w, h) in faces:
         cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
@@ -40,15 +35,15 @@ while True:
 
     if key == ord('s') and len(faces) > 0:
         (x, y, w, h) = faces[0]
-        face_img = frame[y:y + h, x:x + w]
-        img_path = os.path.join(person_dir, f"{count}.jpg")
-        cv2.imwrite(img_path, face_img)
+        face_img = frame[y:y+h, x:x+w]
+        cv2.imwrite(os.path.join(person_dir, f"{count}.jpg"), face_img)
         count += 1
-        print(f"Saved {count} faces in {img_path}")
+        print(f"Saved image {count}")
 
         if count >= max_images:
-            print("Face captured completed")
+            print("Done")
             break
+
     elif key == ord('q'):
         break
 
