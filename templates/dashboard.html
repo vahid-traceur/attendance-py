@@ -2,49 +2,131 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Attendance Dashboard</title>
-    <link rel="stylesheet" href="/static/style.css">
+    <title>Attendance Analytics Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: Arial; background: #f4f6f8; padding: 30px; }
+        h1 { margin-bottom: 10px; }
+        .controls { margin-bottom: 20px; }
+        .controls select, .controls input { margin-right: 10px; padding: 6px; }
+        table { border-collapse: collapse; width: 80%; background: white; margin-top: 20px; }
+        th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+        th { background: #2c7be5; color: white; }
+        canvas { margin-top: 30px; }
+    </style>
 </head>
 <body>
-    <h1>📋 Attendance Dashboard</h1>
 
-    <h2>Today's Attendance</h2>
-    <table>
+<h1>📊 Attendance Analytics Dashboard</h1>
+
+<div class="controls">
+    <label>
+        Name:
+        <select id="nameFilter">
+            <option value="">All</option>
+        </select>
+    </label>
+
+    <label>
+        From:
+        <input type="date" id="startDate">
+    </label>
+
+    <label>
+        To:
+        <input type="date" id="endDate">
+    </label>
+
+    <label>
+        Period:
+        <select id="period">
+            <option value="daily">Daily</option>
+            <option value="weekly">Weekly</option>
+            <option value="monthly">Monthly</option>
+        </select>
+    </label>
+
+    <button onclick="loadData()">Apply</button>
+    <a href="/download/xlsx" style="margin-left:20px;">⬇️ Download Excel Report</a>
+
+</div>
+
+<table id="attendance-table">
+    <tr>
+        <th>Name</th>
+        <th>Date</th>
+        <th>Time</th>
+    </tr>
+</table>
+
+<canvas id="attendanceChart" width="800" height="350"></canvas>
+
+<script>
+let chart = null;
+
+async function loadNames() {
+    const res = await fetch("/api/names");
+    const names = await res.json();
+    const select = document.getElementById("nameFilter");
+    names.forEach(n => {
+        const opt = document.createElement("option");
+        opt.value = n;
+        opt.textContent = n;
+        select.appendChild(opt);
+    });
+}
+
+async function loadData() {
+    const name = document.getElementById("nameFilter").value;
+    const start = document.getElementById("startDate").value;
+    const end = document.getElementById("endDate").value;
+    const period = document.getElementById("period").value;
+
+    const params = new URLSearchParams();
+    if (name) params.append("name", name);
+    if (start) params.append("start", start);
+    if (end) params.append("end", end);
+    params.append("period", period);
+
+    const res = await fetch("/api/attendance?" + params.toString());
+    const data = await res.json();
+
+    const table = document.getElementById("attendance-table");
+    table.innerHTML = `
         <tr>
             <th>Name</th>
             <th>Date</th>
             <th>Time</th>
         </tr>
-        {% for r in today_records %}
-        <tr>
-            <td>{{ r[0] }}</td>
-            <td>{{ r[1] }}</td>
-            <td>{{ r[2] }}</td>
-        </tr>
-        {% endfor %}
-    </table>
+    `;
 
-    <h2>All Records</h2>
-    <table>
-        <tr>
-            <th>Name</th>
-            <th>Date</th>
-            <th>Time</th>
-        </tr>
-        {% for r in all_records %}
-        <tr>
-            <td>{{ r[0] }}</td>
-            <td>{{ r[1] }}</td>
-            <td>{{ r[2] }}</td>
-        </tr>
-        {% endfor %}
-    </table>
+    data.records.forEach(r => {
+        const row = document.createElement("tr");
+        row.innerHTML = `<td>${r.name}</td><td>${r.date}</td><td>${r.time}</td>`;
+        table.appendChild(row);
+    });
 
-    <br>
-    <a href="/download">⬇️ Download CSV</a>
+    if (!chart) {
+        chart = new Chart(document.getElementById("attendanceChart"), {
+            type: "bar",
+            data: {
+                labels: data.labels,
+                datasets: [{
+                    label: "Attendance Count",
+                    data: data.values
+                }]
+            }
+        });
+    } else {
+        chart.data.labels = data.labels;
+        chart.data.datasets[0].data = data.values;
+        chart.update();
+    }
+}
 
-    <p style="margin-top:20px;">
-        <button onclick="location.reload()">🔄 Refresh</button>
-    </p>
+loadNames();
+loadData();
+</script>
+
 </body>
 </html>

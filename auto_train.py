@@ -1,29 +1,39 @@
-import time
-from watchdog.observers import Observer
-from watchdog.events import FileSystemEventHandler
-from train_faces import train_model
+import os
+import hashlib
+import subprocess
+import sys
 
-WATCH_DIR = "known_faces"
+DATASET_DIR = "known_faces"
+HASH_FILE = "dataset.hash"
 
-class FaceFolderHandler(FileSystemEventHandler):
-    def on_any_event(self, event):
-        if event.is_directory:
-            return
-        print("📁 Change detected. Retraining model...")
-        train_model()
 
-if __name__ == "__main__":
-    event_handler = FaceFolderHandler()
-    observer = Observer()
-    observer.schedule(event_handler, WATCH_DIR, recursive=True)
-    observer.start()
+def hash_dataset():
+    h = hashlib.md5()
+    for root, _, files in os.walk(DATASET_DIR):
+        for f in sorted(files):
+            path = os.path.join(root, f)
+            h.update(path.encode())
+            h.update(str(os.path.getmtime(path)).encode())
+    return h.hexdigest()
 
-    print("👀 Watching for face dataset changes... Press Ctrl+C to stop.")
 
-    try:
-        while True:
-            time.sleep(1)
-    except KeyboardInterrupt:
-        observer.stop()
+def dataset_changed():
+    new_hash = hash_dataset()
+    if not os.path.exists(HASH_FILE):
+        open(HASH_FILE, "w").write(new_hash)
+        return True
 
-    observer.join()
+    old_hash = open(HASH_FILE).read()
+    if old_hash != new_hash:
+        open(HASH_FILE, "w").write(new_hash)
+        return True
+
+    return False
+
+
+def run_training():
+    if dataset_changed():
+        print("📸 Dataset changed — retraining model...")
+        subprocess.call([sys.executable, "train_faces.py"])
+    else:
+        print("✅ Dataset unchanged — skipping training")
