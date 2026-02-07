@@ -5,7 +5,7 @@ a = Analysis(
     ['run_app.py'],
     pathex=[],
     binaries=[],
-    datas=[('face_model.yml', '.'), ('label_map.pkl', '.'), ('dataset.hash', '.')],
+    datas=[('models/face_model.yml', '.'), ('models/label_map.pkl', '.'), ('dataset.hash', '.')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},

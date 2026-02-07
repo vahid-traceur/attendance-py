@@ -6,6 +6,11 @@ import numpy as np
 DATASET_DIR = "known_faces"
 IMG_SIZE = (200, 200)
 
+MODEL_DIR = "models"
+MODEL_PATH = os.path.join(MODEL_DIR, "face_model.yml")
+LABEL_PATH = os.path.join(MODEL_DIR, "label_map.pkl")
+os.makedirs(MODEL_DIR, exist_ok=True)
+
 def train_model():
     faces = []
     labels = []
@@ -39,9 +44,9 @@ def train_model():
 
     model = cv2.face.LBPHFaceRecognizer_create()
     model.train(faces, labels)
-    model.save("face_model.yml")
+    model.save(MODEL_PATH)
 
-    with open("label_map.pkl", "wb") as f:
+    with open(LABEL_PATH, "wb") as f:
         pickle.dump(label_map, f)
 
     print("✅ Model retrained successfully.")

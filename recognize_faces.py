@@ -3,16 +3,17 @@ import pickle
 import numpy as np
 from datetime import datetime
 from attendance import mark_attendance
-from utils import resource_path
+from utils.utils import resource_path
+from utils.attendance_logger import log_attendance
 
 IMG_SIZE = (200, 200)
 CONFIDENCE_THRESHOLD = 70  # هرچه کمتر = سختگیرانه‌تر
 
 model = cv2.face.LBPHFaceRecognizer_create()
-model.read(resource_path("face_model.yml"))
+model.read(resource_path("models/face_model.yml"))
 
 def main():
-    with open(resource_path("label_map.pkl"), "rb") as f:
+    with open(resource_path("models/label_map.pkl"), "rb") as f:
         label_map = pickle.load(f)
 
     cap = cv2.VideoCapture(0)
@@ -40,6 +41,10 @@ def main():
                 status = "Marked"
                 mark_attendance(name)
                 color = (0, 255, 0)
+                state = log_attendance(name)
+                if state:
+                    cv2.putText(frame, f"{name} ({state})", (x, y - 10),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
             else:
                 name = "Unknown"
                 status = "Unregistered"
